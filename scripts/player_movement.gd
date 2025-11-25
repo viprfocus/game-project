@@ -14,21 +14,20 @@ var device = ""
 var last_direction = DIRECTION.right
 var move = false
 var atk = false
+var blk = false
 var health = 120
 var taken_damage = false
+var is_blocking = false
 func _ready():
+	# CHANGE WHICH INPUT DEVICE TO USE
 	match name:
 		"Player":
 			device = "Keyboard0_"
 		"Player2":
 			device = "Keyboard1_"
-	# GET ALL DEVICES tick
-	# GET ALREADY USED DEVICES tick
-	# IF ANY BUTTON PRESSED, CHECK IF CONTROLLER ALREADY USED
-	# IF NOT SET THAT CONTROLLER TO THIS PLAYER'S tick
+
 func _physics_process(delta: float) -> void:
-	# Add the gravity.
-	# jump starts here now
+	# PHYSICS
 	if device != "":
 		if is_on_floor():
 			coyote_timer = 0.0
@@ -54,7 +53,6 @@ func _physics_process(delta: float) -> void:
 			if not Input.is_action_pressed(device+"Jump"):
 				jump_in_progress = false
 		change_animation()
-	# ok i found problem 
 				# Get the input direction and handle the movement/deceleration.
 		var direction := Input.get_axis(device+"Left", device+"Right")
 		if direction:
@@ -80,23 +78,10 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed(device+"Atk"):
 			if can_attack:
 				attack()
-			
+		if Input.is_action_just_pressed(device+"Block"):
+			block()
 			
 		move_and_slide()
-
-func attack():
-	$Attack_Hitbox.monitorable = true
-	$Attack_Hitbox.monitoring = true
-	can_attack = false
-	$Attack_Timer.start()
-	
-
-		
-func _on_attack_timer_timeout() -> void:
-	$Attack_Hitbox.monitorable = false
-	$Attack_Hitbox.monitoring = false
-	can_attack = true
-	$Attack_Timer.stop()
 
 func change_animation():
 	if velocity.x != 0:
@@ -107,30 +92,76 @@ func change_animation():
 		atk = true
 	else:
 		atk = false
+	if is_blocking:
+		blk = true
+	else:
+		blk = false
 	
-	match [move, atk]:
-		[false, false]:
+	match [move, atk, blk]:
+		[false, false, false]:
 			$AnimatedSprite2D.animation = "idle"
-			
-		[false, true]:
+		[false, true, false]:
 			$AnimatedSprite2D.animation = "still_atk"
-		[true, false]:
+		[true, false, false]:
 			$AnimatedSprite2D.animation = "move"
-		[true, true]:
+		[true, true, false]:
 			$AnimatedSprite2D.animation = "move_atk"
+		[false, false, true]:
+			$AnimatedSprite2D.animation = "idle_blk"
 			
-func _on_damage_hitbox_area_entered(area):
-	#print("damage",area)
-	if area != $Attack_Hitbox and area.name == "Attack_Hitbox":
-		damage()
-			
+		[false, true, true]:
+			$AnimatedSprite2D.animation = "still_atk_blk"
+		[true, false, true]:
+			$AnimatedSprite2D.animation = "move_blk"
+		[true, true, true]:
+			$AnimatedSprite2D.animation = "move_atk_blk"
+
+
+# DEALING DAMAGE
+func attack():
+	print(name," attack()")
+	$Attack_Hitbox.monitorable = true
+	$Attack_Hitbox.monitoring = true
+	can_attack = false
+	$Attack_Timer.start()
+
 func _on_attack_hitbox_area_entered(area) -> void:
+	print(name," _on_attack_hitbox_area_entered()")
 	if area != $Damage_Hitbox and area.name == "Damage_Hitbox":
 		$Attack_Hitbox.set_deferred("monitoring", false)
 		$Attack_Hitbox.set_deferred("monitorable", false)
+
+func _on_attack_timer_timeout() -> void:
+	print(name," _on_attack_timer_timeout()")
+	if $Attack_Hitbox.monitoring and $Attack_Hitbox.monitorable:
+		$Attack_Hitbox.monitorable = false
+		$Attack_Hitbox.monitoring = false
+	can_attack = true
+
+
+#RECIEVING DAMAGE
+func _on_damage_hitbox_area_entered(area):
+	print(name," _on_damage_hitbox_area_entered()")
+	if area != $Attack_Hitbox and area.name == "Attack_Hitbox":
+		damage()
+
+func damage(): 
+	print(name," damage()")
+	#take damage, play animation, stop attack ability
+	if not is_blocking:
+		taken_damage = true
+		health -= 5
+		print("damage done, health left:",health, name)
+	else:
+		is_blocking = false
+		print("attack blocked!")
 	
-		
-		
+# BLOCKING
+func block():
+	is_blocking = true
+	$Block_Timer.start()
+func _on_block_timer_timeout() -> void:
+	is_blocking = false
 		
 #issues i have had quick access
 # speed and gravity values weren't entirely right.
@@ -223,8 +254,7 @@ func _on_attack_hitbox_area_entered(area) -> void:
 
 #issue: same issue?
 #fix: it actually is doing what i want but i was testing in the same frame.
-func damage():
-	#take damage, play animation, stop attack ability
-	taken_damage = true
-	health -= 5
-	
+
+#issue: health only taken after moving out and in again.
+# found self's atk hitbox until attack done once.
+# issue probably in the timer cancel function
