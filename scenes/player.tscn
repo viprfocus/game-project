@@ -440,13 +440,21 @@ shape = SubResource("CapsuleShape2D_qlg0r")
 wait_time = 0.35
 one_shot = true
 
-[node name="Cooldown_Timer" type="Timer" parent="."]
+[node name="Attack_Cooldown_Timer" type="Timer" parent="."]
+wait_time = 1.5999999999999999
+one_shot = true
 
 [node name="Block_Timer" type="Timer" parent="."]
 wait_time = 0.65
 one_shot = true
 
+[node name="Block_Cooldown_Timer" type="Timer" parent="."]
+wait_time = 1.5999999999999999
+one_shot = true
+
 [connection signal="area_entered" from="Attack_Hitbox" to="." method="_on_attack_hitbox_area_entered"]
 [connection signal="area_entered" from="Damage_Hitbox" to="." method="_on_damage_hitbox_area_entered"]
 [connection signal="timeout" from="Attack_Timer" to="." method="_on_attack_timer_timeout"]
+[connection signal="timeout" from="Attack_Cooldown_Timer" to="." method="_on_attack_cooldown_timer_timeout"]
 [connection signal="timeout" from="Block_Timer" to="." method="_on_block_timer_timeout"]
+[connection signal="timeout" from="Block_Cooldown_Timer" to="." method="_on_block_cooldown_timer_timeout"]

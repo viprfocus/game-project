@@ -10,6 +10,7 @@ var coyote_timer = 0.0
 var jump_in_progress = false
 enum DIRECTION {right, left}
 var can_attack = true
+var can_block = true
 var device = ""
 var last_direction = DIRECTION.right
 var move = false
@@ -79,10 +80,10 @@ func _physics_process(delta: float) -> void:
 			if can_attack:
 				attack()
 		if Input.is_action_just_pressed(device+"Block"):
-			block()
-			
+			if can_block:
+				block()
 		move_and_slide()
-
+		
 func change_animation():
 	if velocity.x != 0:
 		move = true
@@ -135,6 +136,9 @@ func _on_attack_timer_timeout() -> void:
 	if $Attack_Hitbox.monitoring and $Attack_Hitbox.monitorable:
 		$Attack_Hitbox.monitorable = false
 		$Attack_Hitbox.monitoring = false
+	$Attack_Cooldown_Timer.start()
+func _on_attack_cooldown_timer_timeout():
+	print(name, " _on_attack_cooldown_timer_timeout()")
 	can_attack = true
 
 
@@ -147,7 +151,7 @@ func _on_damage_hitbox_area_entered(area):
 func damage(): 
 	print(name," damage()")
 	#take damage, play animation, stop attack ability
-	if not is_blocking:
+	if can_block:
 		taken_damage = true
 		health -= 5
 		print("damage done, health left:",health, name)
@@ -157,9 +161,14 @@ func damage():
 # BLOCKING
 func block():
 	is_blocking = true
+	can_block = false
 	$Block_Timer.start()
 func _on_block_timer_timeout() -> void:
 	is_blocking = false
+	$Block_Cooldown_Timer.start()
+func _on_block_cooldown_timer_timeout():
+	print(name, " _on_block_cooldown_timer_timeout()")
+	can_block = true
 		
 #issues i have had quick access
 # speed and gravity values weren't entirely right.
