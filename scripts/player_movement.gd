@@ -100,19 +100,18 @@ func change_animation():
 	match [move, atk, blk]:
 		[false, false, false]:
 			$AnimatedSprite2D.animation = "idle"
+		[false, false, true]:
+			$AnimatedSprite2D.animation = "still_blk"
 		[false, true, false]:
 			$AnimatedSprite2D.animation = "still_atk"
-		[true, false, false]:
-			$AnimatedSprite2D.animation = "move"
-		[true, true, false]:
-			$AnimatedSprite2D.animation = "move_atk"
-		[false, false, true]:
-			$AnimatedSprite2D.animation = "idle_blk"
-			
 		[false, true, true]:
 			$AnimatedSprite2D.animation = "still_atk_blk"
+		[true, false, false]:
+			$AnimatedSprite2D.animation = "move"
 		[true, false, true]:
 			$AnimatedSprite2D.animation = "move_blk"
+		[true, true, false]:
+			$AnimatedSprite2D.animation = "move_atk"
 		[true, true, true]:
 			$AnimatedSprite2D.animation = "move_atk_blk"
 
@@ -153,7 +152,6 @@ func damage():
 		health -= 5
 		print("damage done, health left:",health, name)
 	else:
-		is_blocking = false
 		print("attack blocked!")
 	
 # BLOCKING
